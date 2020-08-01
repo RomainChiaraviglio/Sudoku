@@ -5,25 +5,26 @@ import random
 from timeit import default_timer
 from tkinter import messagebox
 
-root = Tk() #First thing to do
+root = Tk() 
 root.title("Sudoku")
 
+#Création de deux font un pour les cellules, un pour l'interface
 myFont = font.Font(family='Calibri', size=21)
 myFont2 = font.Font(family='Calibri bold', size=12)
 
-class ent(tk.Entry): #class to create the entries
-    def __init__(self, master=None, max_len=1): #
+class ent(tk.Entry): #Classe de création d'entry pour les cellules du sudoku
+    def __init__(self, master=None, max_len=1):
         self.var = tk.StringVar() #on implémente une variable string que l'on pourra surveiller dans chaque entry
         self.max_len = max_len
         tk.Entry.__init__(self, master, textvariable=self.var, width=3, justify='center')
-        self.old_value = '' #on défini notre variable de blocage en cas de remplissage non autorisé, initiée nulle car notre cellule est vide
-        self.var.trace('w', self.check) #trace(mode, callback) MODE is one of "r", "w", "u" for read, write, undefine. CALLBACK must be a function which is called when the variable is read, written or undefined.
-
+        self.old_value = '' #on défini notre variable de blocage en cas de remplissage non autorisé, initiée à nulle car nos cellules sont vides au départ
+        self.var.trace('w', self.check) #la méthode trace(mode, callback) permet de surveiller la variable var à chaque fois qu'elle est modifiée. le MODE ("r", "w", "u" for read, write, undefine) est le type de modification surveillé. CALLBACK est une fonction appelée lorsque une modification est détectée.
+	
     def check(self, *args):
-        if len(self.get()) <= self.max_len and (self.get().isnumeric() or self.get()==""): #si le remplissage est sup à 2 et est numéric ou null
-            self.old_value = self.get() # alors on accepte le changement
+        if len(self.get()) <= self.max_len and (self.get().isnumeric() or self.get()==""): #si le remplissage est inférieur ou égale à 1 et est numéric ou null
+            self.old_value = self.get() # alors on accepte le changement et on passe la variable de blocage égale à la nouvelle valeur
         else:
-            self.var.set(self.old_value) # sinon on oblige la cellule à rester égale à la valeur précédente
+            self.var.set(self.old_value) # sinon on oblige la cellule à rester égale à la variable de blocage
 
         #vérification que le chiffre entré correspond à la solution
         if self.get()==str(soluce[self.grid_info()['column']+9*self.grid_info()['row']]):
@@ -38,23 +39,23 @@ class ent(tk.Entry): #class to create the entries
          		message()
 
 
-r=0 #row counter
-c=0 #column counter
+r=0 #compteur de lignes
+c=0 #compteur de colonnes
 count=0
-entries = [] #list of entries
+entries = [] #list d'entry
 
 for i in range(1,82):
 	i=ent(root, max_len=1)
-	if count%9 ==0: #reseting the column on reaching the 9th position
+	if count%9 ==0: #dés que la colonne 9 est atteinte, on reset le compteur
 		c=0
 	i.grid(row=r, column=c)
 	count+=1
 	c+=1
-	r=int(count/9) #incrementing a new row on reaching the 9th position
+	r=int(count/9) #dés que le compteur atteint un multiple de 9 on est à la fin d'une ligne, on incrémente donc une nouvelle ligne
 	i['font'] = myFont
 	entries.append(i)
 
-
+#fonction permettant de retourner la position de la première cellule vide d'une liste
 def trouvevide(li):
 	i = 1
 	for l in li:
@@ -63,14 +64,16 @@ def trouvevide(li):
 		i+=1
 	return None
 
-#list with each entry position in each square
+#liste des numéros des entry dans chaque carré du sudoku
 carré=[[0,1,2,9,10,11,18,19,20],[3,4,5,12,13,14,21,22,23],[6,7,8,15,16,17,24,25,26],[27,28,29,36,37,38,45,46,47],[30,31,32,39,40,41,48,49,50],[33,34,35,42,43,44,51,52,53],[54,55,56,63,64,65,72,73,74],[57,58,59,66,67,68,75,76,77],[60,61,62,69,70,71,78,79,80]]
 
-def carre(pos): #function to find in wich square with the given position
+#fonction qui retourne le carré dans lequel on se situe en fonction d'une position donnée
+def carre(pos): 
 	for c in carré:
 		if (pos[1]+9*pos[0]) in c:
 			return c
 
+#fonction de validation d'une case du sudoku
 def validation(lis,num,pos):
 	#verification ligne
 	for r in range(9):
@@ -89,6 +92,7 @@ def validation(lis,num,pos):
 			return False
 	return True
 
+#fonction principale de résolution du sudoku
 def resolve(lis):
 	if not trouvevide(lis):
 		return True
@@ -102,18 +106,19 @@ def resolve(lis):
 			lis[col+9*row]=""
 	return False
 
-
+#fonction de génération aléatoire d'une grille de sudoku
 def creation():
 	global start
 	start = default_timer()
 
 	x = difficulty.get()
 	crea=[1,2,3,4,5,6,7,8,9]
-	random.shuffle(crea)
+	random.shuffle(crea) #Création de la première ligne du sudoku mélangée aléatoirement
 	for i in range(72):
 		crea.append("")
-	resolve(crea)
-
+	resolve(crea) #A partir de la première ligne on lance la résolution du sudoku
+	
+	#Enfin en fonction de la variable de difficulté on supprime aléatoirement un certain nombre de cases
 	if x == "Facile":
 		while crea.count('')<40:
 			crea[random.randint(0,80)]=""
@@ -127,6 +132,7 @@ def creation():
 			crea[random.randint(0,80)]=""
 		return crea
 
+#fonction de création du sudoku et remplissage des entry
 def generation():
 	global error
 	error.set(0)
@@ -139,17 +145,18 @@ def generation():
 		e.insert(0,soluce[c])
 		c+=1
 		if e.get()!="":
-			e.configure(state='disabled')
-	resolve(soluce)
+			e.configure(state='disabled') #on bloque les cases préremplies afin que l'utilisateur ne puisse pas les modifier
+	resolve(soluce) #on résou en avance le sudoku afin de comparer cette solutions aux propositions de l'utilisateurs dans la fonction check des entry
 	chrono()
 
+#fonction de vérification que la proposition de l'utilisateur correxponde à la solution
 def verification():
 	for e in entries:
 		if e.get()=="" or e.get()!=str(soluce[e.grid_info()['column']+9*e.grid_info()['row']]):
 			return False
 	return True
 
-
+#fonction du bouton "résoudre" qui affiche la solution
 def resolving():
 	c = 0
 	for e in entries:
@@ -157,7 +164,7 @@ def resolving():
 		e.insert(0,soluce[c])
 		c+=1
 
-
+#fonction de chronomètre
 def chrono():
 	now = default_timer() - start
 	minutes, seconds = divmod(now,60)
@@ -167,6 +174,7 @@ def chrono():
 
 start = default_timer()
 
+#fonction d'affichage d'un messagebox en cas de résolution du sudoku
 def message():
 	msg =Tk()
 	msg.eval('tk::PlaceWindow %s center' % msg.winfo_toplevel())
@@ -175,6 +183,7 @@ def message():
 	msg.deiconify()
 	msg.destroy()
 
+#création de l'interface
 mybuttonresou = Button(root, text="Résoudre", command=resolving, padx=10)
 mybuttonresou.grid(row = 9, column =7, columnspan=2)
 
@@ -213,7 +222,7 @@ mylabtime['font'] = myFont2
 mylaberror['font'] = myFont2
 mylaberr['font'] = myFont2
 
-# Création des bordures
+# Création des bordures à l'aide de labels compréssés dans les cellules ciblées
 mylbalx1=Label(root, bg="black", padx=0.4, pady=11)
 mylbalx2=Label(root, bg="black", padx=0.4, pady=11)
 mylbalx3=Label(root, bg="black", padx=0.4, pady=11)
