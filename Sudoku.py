@@ -67,7 +67,7 @@ def trouvevide(li):
 #liste des numéros des entry dans chaque carré du sudoku
 carré=[[0,1,2,9,10,11,18,19,20],[3,4,5,12,13,14,21,22,23],[6,7,8,15,16,17,24,25,26],[27,28,29,36,37,38,45,46,47],[30,31,32,39,40,41,48,49,50],[33,34,35,42,43,44,51,52,53],[54,55,56,63,64,65,72,73,74],[57,58,59,66,67,68,75,76,77],[60,61,62,69,70,71,78,79,80]]
 
-#fonction qui retourne le carré dans lequel on se situe en fonction d'une position donnée
+#fonction qui retourne le carré dans lequel on se situe, en fonction d'une position donnée
 def carre(pos): 
 	for c in carré:
 		if (pos[1]+9*pos[0]) in c:
@@ -92,7 +92,7 @@ def validation(lis,num,pos):
 			return False
 	return True
 
-#fonction principale de résolution du sudoku
+#fonction principale de résolution du sudoku par méthode de backtracking
 def resolve(lis):
 	if not trouvevide(lis):
 		return True
@@ -110,8 +110,6 @@ def resolve(lis):
 def creation():
 	global start
 	start = default_timer()
-
-	x = difficulty.get()
 	crea=[1,2,3,4,5,6,7,8,9]
 	random.shuffle(crea) #Création de la première ligne du sudoku mélangée aléatoirement
 	for i in range(72):
@@ -119,37 +117,32 @@ def creation():
 	resolve(crea) #A partir de la première ligne on lance la résolution du sudoku
 	
 	#Enfin en fonction de la variable de difficulté on supprime aléatoirement un certain nombre de cases
-	if x == "Facile":
-		while crea.count('')<40:
-			crea[random.randint(0,80)]=""
-		return crea
-	elif x == "Intermédiaire":
-		while crea.count('')<50:
-			crea[random.randint(0,80)]=""
-		return crea
-	elif x == "Difficile":
-		while crea.count('')<55:
-			crea[random.randint(0,80)]=""
-		return crea
+	x = difficulty.get()
+	dico_difficulte = {"Facile":40, "Intermédiaire":50, "Difficile":60}
+	
+	list_a_supprimer = random.sample(range(1,80), dico_difficulte[x])
+	grille = crea.copy()
+	for position in list_a_supprimer:
+		grille[position] = ""
+	return crea,grille #On renvoi la solution du sudoku, et la grille préparée
+	
 
 #fonction de création du sudoku et remplissage des entry
 def generation():
-	global error
-	error.set(0)
-	c = 0 
-	global soluce
-	soluce=creation()
+	global error, soluce
+	error.set(0) 
+	soluce, grille = creation()
+	increment = 0
 	for e in entries:
 		e.configure(state='normal')
 		e.delete(0)
-		e.insert(0,soluce[c])
-		c+=1
-		if e.get()!="":
+		e.insert(0,grille[increment])
+		increment += 1
+		if e.get() != "":
 			e.configure(state='disabled') #on bloque les cases préremplies afin que l'utilisateur ne puisse pas les modifier
-	resolve(soluce) #on résou en avance le sudoku afin de comparer cette solutions aux propositions de l'utilisateurs dans la fonction check des entry
 	chrono()
 
-#fonction de vérification que la proposition de l'utilisateur correxponde à la solution
+#fonction de vérification que la proposition de l'utilisateur correxpond à la solution
 def verification():
 	for e in entries:
 		if e.get()=="" or e.get()!=str(soluce[e.grid_info()['column']+9*e.grid_info()['row']]):
@@ -158,11 +151,11 @@ def verification():
 
 #fonction du bouton "résoudre" qui affiche la solution
 def resolving():
-	c = 0
+	increment = 0
 	for e in entries:
 		e.delete(0)
-		e.insert(0,soluce[c])
-		c+=1
+		e.insert(0,soluce[increment])
+		increment += 1
 
 #fonction de chronomètre
 def chrono():
